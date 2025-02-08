@@ -1,0 +1,240 @@
+<div class="container-fluid">
+  <app-page-title title="Jobs" [breadcrumbItems]="breadCrumbItems"></app-page-title>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="row mb-2">
+            <div class="col-sm-4">
+              <div class="search-box me-2 mb-2 d-inline-block">
+                <div class="position-relative">
+                  <input type="text"
+                    class="form-control"
+                    id="searchTableList"
+                    placeholder="Search..."
+                    [(ngModel)]="searchTerm"
+                  />
+                  <i class="bx bx-search-alt search-icon"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Conditionally show content based on role -->
+          <div *ngIf="isRecruter; else candidateView">
+            <div class="table-responsive">
+              <table class="table align-middle table-nowrap dt-responsive nowrap w-100" id="jobList-table">
+                <thead>
+                  <tr>
+                    
+                    <th>Job Title</th>
+                    <th>Description</th>
+                    <th>Experience</th>
+                    <th>Status</th>
+                    
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let job of jobsData | filter:searchTerm">
+                    
+                    <td>{{job.domaine}}</td>
+                    <td>{{job.description}}</td>
+                    <td>{{job.experience}}</td>
+                    <td>
+                      <span [ngClass]="{'text-warning': job.status === 'pending', 'text-success': job.status === 'accepted', 'text-danger': job.status === 'rejected'}">
+                        {{job.status | titlecase}}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="d-flex">
+                        <button *ngIf="job.status === 'pending'" class="btn btn-success btn-sm me-2" (click)="updateJobStatus(job.id, 'accepted')">Accept</button>
+                        <button *ngIf="job.status === 'pending'" class="btn btn-danger btn-sm" (click)="updateJobStatus(job.id, 'rejected')">Reject</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <ng-template #candidateView>
+            <div class="table-responsive">
+              <table class="table align-middle table-nowrap dt-responsive nowrap w-100" id="acceptedJobList-table">
+                <thead>
+                  <tr>
+                    
+                    <th>Description</th>
+                    <th>Domaine</th>
+                    <th>limite</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let job of jobsData | filter:searchTerm">
+                    <!-- Show job details only if the job is accepted -->
+                    <td *ngIf="job.status === 'ACCEPTED'">{{ job.description }}</td>
+                    <td *ngIf="job.status === 'ACCEPTED'">{{ job.domaine }}</td>
+                    <td *ngIf="job.status === 'ACCEPTED'">{{ job.limite }}</td>
+                
+                    <!-- Handle candidature status -->
+                    <td>
+                      <!-- Check if there is a candidature -->
+                      <ng-container *ngIf="getCandidatureByJob(job.id) as candidature; else noCandidature">
+                        <!-- Show status based on candidature status -->
+                        <span *ngIf="candidature.status === 'ACCEPTED' && job.status === 'ACCEPTED'" class="text-success">
+                          {{ candidature.status | titlecase }}
+                        </span>
+                        <span *ngIf="candidature.status === 'REJECTED' && job.status === 'ACCEPTED'" class="text-danger">
+                          {{ candidature.status | titlecase }}
+                        </span>
+                        <span *ngIf="candidature.status === 'PENDING' && job.status === 'ACCEPTED'" class="text-warning">
+                          {{ candidature.status | titlecase }}
+                        </span>
+                      </ng-container>
+                
+                      <!-- Fallback for jobs with no candidatures -->
+                      <ng-template #noCandidature>
+                        <span *ngIf="job.status === 'ACCEPTED'" class="text-muted">No application yet</span>
+                      </ng-template>
+                    </td>
+                
+                    <!-- Show buttons -->
+                    <td>
+                      <!-- If there is a candidature -->
+                      <ng-container *ngIf="getCandidatureByJob(job.id) as candidature; else applyButton">
+                        <!-- Show "Interview" button if the candidature is accepted -->
+                        <a href="https://meet.google.com/uyg-getu-nzu">
+                          <button *ngIf="job.status === 'ACCEPTED' && candidature.status === 'ACCEPTED'" class="btn btn-success" style="margin-left: 5px;">
+                            Interview
+                          </button>
+                        </a>
+                
+                        <!-- Hide "Apply" button if the user has already applied (status is not PENDING) -->
+                        <button *ngIf="job.status === 'ACCEPTED' && candidature.status === 'PENDING'" class="btn btn-warning" (click)="applyJob(job.id)">
+                          Apply
+                        </button>
+                      </ng-container>
+                
+                      <!-- Fallback to show "Apply" button if no candidature exists -->
+                      <ng-template #applyButton>
+                        <button *ngIf="job.status === 'ACCEPTED'" class="btn btn-warning" (click)="applyJob(job.id)">
+                          Apply
+                        </button>
+                      </ng-template>
+                    </td>
+                
+                    <!-- View more button -->
+                    <td>
+                      <div class="col-sm-8">
+                        <div class="text-sm-end">
+                          <button *ngIf="job.status === 'ACCEPTED'" type="button" class="btn btn-info btn-rounded mb-2 me-2"
+                            (click)="openModal(job)">
+                            <i class="mdi mdi-plus mr-1"></i> View More
+                          </button>
+                          <button *ngIf="job.status === 'ACCEPTED'" type="button" class="btn btn-danger btn-rounded mb-2 me-2"
+                            (click)="openReportModal(job)">
+                            <i class="mdi mdi-plus mr-1"></i> Report
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+                
+                
+                
+              </table>
+            </div>
+          </ng-template>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Modal -->
+  <div id="createOffreModal" class="modal" [ngClass]="{'show': isModalOpen}">
+    <div class="modal-content">
+      <span class="close" (click)="closeModal()">&times;</span>
+      <h4>Add New Offre In {{modaleData.domaine}}</h4>
+      <div class="row" id="jobgrid-list">
+        <div class="col" >
+            <div class="card">
+                <div class="card-body">
+                    <div class="favorite-icon">
+                        <a href="javascript:void(0)"><i class="uil uil-heart-alt fs-18"></i></a>
+                    </div>
+                    
+                    <!-- <img src="{{data.image}}" alt="" height="50" class="mb-3"> -->
+                    <h5 class="fs-17 mb-2"><a href="javascript:void(0);" class="text-dark">{{modaleData.description}}</a> <small class="text-muted fw-normal">({{modaleData.experience}} Yrs Exp.)</small></h5>
+                    <ul class="list-inline mb-0">
+                        <li class="list-inline-item">
+                            <p class="text-muted fs-14 mb-1">{{modaleData.contractType}}</p>
+                        </li>
+                        <li class="list-inline-item">
+                          <p class="text-muted fs-14 mb-0"><i class="uil uil-wallet"></i>{{modaleData.nbPoste}} Poste</p>
+                      </li>
+                        <li class="list-inline-item">
+                          <p class="text-muted fs-14 mb-1"><i class="bx bx-alarm"></i>{{modaleData.limite}}</p>
+                        </li>
+                      
+                    </ul>
+                    <p class="text-muted fs-14 mb-0"><i class="mdi mdi-map-marker"></i> {{modaleData.ville}}</p>
+                    <div class="mt-3 hstack gap-2">
+                        <span class="badge rounded-1 badge-soft-success">Full Time</span>
+                        <span class="badge rounded-1 badge-soft-warning">Urgent</span>
+                        <span class="badge rounded-1 badge-soft-info">Private</span>
+                    </div>
+                    <div class="mt-4 hstack gap-2">
+                        <a href="javascript:void(0);" *ngIf="modaleData.status === 'pending'" data-bs-toggle="modal" class="btn btn-soft-success w-100" (click)="applyJob(modaleData.id)" >Interview</a>
+                        <a href="javascript:void(0);" *ngIf="modaleData.status  === 'PENDING'" data-bs-toggle="modal" class="btn btn-soft-primary w-100" (click)="applyJob(modaleData.id)">Apply Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--end col-->
+    </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- reclamation modal -->
+
+  <div id="reportModal" class="modal" [ngClass]="{'show': isReportModalOpen}">
+    <div class="modal-content">
+      <span class="close" (click)="closeModal()">&times;</span>
+      <h4>Submit Report</h4>
+      <form [formGroup]="reportForm" (ngSubmit)="submitReport()">
+        
+        <!-- Candidat Field -->
+        <div class="form-group">
+          <label for="candidat">Candidat Input</label>
+          <input type="text" formControlName="candidat" id="candidat" class="form-control" [readonly]="isAdmin" [value]="content" >
+        </div>
+  
+        <!-- Admin Field (Read-Only for Candidat) -->
+        <div class="form-group">
+          <label for="admin">Admin Response</label>
+          <input 
+            type="text" 
+            formControlName="admin" 
+            id="admin" 
+            class="form-control" 
+            [readonly]="!isAdmin"
+            [value]="adminResponse" 
+          >
+        </div>
+        
+  
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="!reportForm.valid">Submit</button>
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
